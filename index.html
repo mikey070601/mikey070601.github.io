@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>华子欣专属</title>
+  <style>
+    /* 基础重置 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "微软雅黑", sans-serif;
+    }
+
+    /* 流星雨背景（核心强化：更亮、更宽、更清晰） */
+   .meteor-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+      background: transparent;
+    }
+   .meteor {
+      position: absolute;
+      width: 3px; /* 加宽到3px，更醒目 */
+      height: 40px; /* 加长基础长度 */
+      /* 高亮渐变：纯白头部+淡白尾迹，奶白背景下对比极强 */
+      background: linear-gradient(to bottom right, #fff, rgba(255, 255, 255, 0.1));
+      border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%; /* 头部更粗，尾迹更细 */
+      /* 新增发光效果，夜间感更强 */
+      box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
+      animation: meteorFall 1.2s linear infinite; /* 速度稍快，更有流星感 */
+      opacity: 0;
+      will-change: transform, opacity;
+      transform: translateZ(0); /* 强制GPU加速，避免模糊 */
+    }
+
+    /* 动画强化：轨迹更长、显现更快 */
+    @keyframes meteorFall {
+      0% {
+        transform: translateX(0) translateY(0) rotate(45deg);
+        opacity: 0;
+      }
+      5% {
+        opacity: 1; /* 快速显现，不拖沓 */
+      }
+      90% {
+        opacity: 1; /* 保持高亮时间更长 */
+      }
+      100% {
+        transform: translateX(-400px) translateY(400px) rotate(45deg); /* 轨迹加长40% */
+        opacity: 0;
+      }
+    }
+
+    /* 奶白色背景 */
+    body {
+      background: #f8f5f0;
+      position: relative;
+    }
+    body::after {
+      content: "加载中...若未显示效果，可刷新页面重试";
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.5s;
+      pointer-events: none;
+      z-index: 10;
+    }
+    body.load-fail::after {
+      opacity: 1;
+    }
+
+    /* 弹窗样式（多彩温馨版） */
+   .popup {
+      position: absolute;
+      color: #333;
+      padding: 16px 24px;
+      border-radius: 14px;
+      font-size: 18px;
+      animation: floatFade 5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+      max-width: 250px;
+      word-wrap: break-word;
+      will-change: transform, opacity;
+      z-index: 999;
+      opacity: 0;
+      transform-origin: center bottom;
+    }
+    @keyframes floatFade {
+      0% { opacity: 0; transform: scale(0.8) translateY(20px) rotate(0deg); filter: blur(3px); }
+      20% { opacity: 0.95; transform: scale(1.05) translateY(0) rotate(var(--rotate-init)); filter: blur(0); }
+      70% { opacity: 0.95; transform: scale(1.03) translateY(calc(var(--float-range) * -1)) rotate(var(--rotate-final)); }
+      100% { opacity: 0; transform: scale(0.9) translateY(calc(var(--float-range) * -2)) rotate(var(--rotate-final)); filter: blur(2px); }
+    }
+
+    /* 音乐按钮 */
+   .music-btn-group {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+   .music-btn {
+      width: 150px;
+      height: 52px;
+      padding: 0;
+      border: none;
+      border-radius: 28px;
+      background: rgba(255, 220, 180, 0.9);
+      color: #333;
+      font-size: 17px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+   .music-btn:active { transform: translateY(1px) scale(0.98); }
+   .music-btn:focus-visible { outline: 2px solid #ffb488; outline-offset: 2px; }
+   .music-btn:hover:not(:disabled) { background: rgba(255, 210, 160, 0.95); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2); }
+   .music-btn:disabled { background: #f2e9e4; cursor: not-allowed; box-shadow: none; color: #999; }
+   .music-status { color: #666; font-size: 14px; opacity: 0; transition: opacity 0.3s; }
+   .music-status.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="meteor-container" id="meteorContainer"></div>
+
+  <audio id="bgMusic" loop>
+    <source src="https://qishui.douyin.com/s/iuEWBSqb/">
+    <source src="https://qishui.douyin.com/s/iuEWBSqb/">
+    你的浏览器不支持音频播放，请更换浏览器~
+   ></audio>
+
+  <div class="music-btn-group">
+    <button id="playBtn" class="music-btn" onclick="playMusic()">
+      <span class="icon">🎶</span>
+      <span>播放温馨音乐</span>
+    </button>
+    <button id="pauseBtn" class="music-btn" onclick="pauseMusic()" disabled>
+      <span class="icon">⏸️</span>
+      <span>暂停播放</span>
+    </button>
+    <div class="music-status" id="musicStatus">音乐加载中...</div>
+  </div>
+
+  <script>
+    const messages = [
+      "记得吃水果～", "我想你了🥰", "天天开心！", "有想我吗？",
+      "希望你快乐～", "多喝热水呀", "别熬夜啦！", "要天天开心～", "盼你事事顺💖",
+      "天气变化记得添衣，别让自己着凉啦", "每一次坚持，都在为未来铺垫", "做自己就好，你本来就很优秀呀", "今天也要好好爱自己，不辜负每一刻",
+      "晚风很温柔，像我对你的想念🌙", "三餐规律，照顾好自己的胃呀", "累了就歇会儿，不用一直逞强", "你的笑容，是我见过最美的风景",
+      "愿你被世界温柔以待，万事顺意", "不管走多远，我都在你身后呀", "别焦虑，一切都会慢慢变好的", "偶尔放松下，生活不用太紧绷",
+      "记得给生活加点糖，日子会甜起来✨", "遇到不开心就告诉我，我当你的树洞", "好好睡觉，梦里有甜甜的小美好", "你值得所有的偏爱和例外",
+      "新的一天，也要元气满满呀", "照顾好自己，比什么都重要", "愿你眼里有光，心中有爱", "烦恼会过去，快乐会常来",
+      "多和喜欢的人说话，心情会更棒", "别太在意别人的看法，你超棒的", "闲暇时多出去走走，看看风景呀", "努力的你，真的很耀眼🌟",
+      "愿所有美好，都如期而至", "喝水要勤，别等渴了才想起", "保持热爱，奔赴下一场山海", "疲惫时就听听歌，放松一下",
+      "你一笑，整个世界都亮了", "愿你平安喜乐，无灾无难", "小事慢慢来，生活慢慢来", "记得常联系，我一直都在",
+      "天冷加衣，天热防暑，好好照顾自己", "你的努力，时光都会替你见证", "愿日子清透，世事温柔", "不慌不忙，慢慢长大（慢慢变好）"
+    ];
+
+    const warmColors = [
+      'hsla(10, 55%, 72%, 0.95)', 'hsla(25, 65%, 68%, 0.95)', 
+      'hsla(45, 65%, 68%, 0.95)', 'hsla(70, 55%, 68%, 0.95)', 
+      'hsla(140, 45%, 68%, 0.95)', 'hsla(170, 45%, 68%, 0.95)', 
+      'hsla(220, 45%, 72%, 0.95)', 'hsla(330, 55%, 72%, 0.95)', 
+      'hsla(350, 55%, 68%, 0.95)', 'hsla(60, 55%, 72%, 0.95)', 
+      'hsla(200, 40%, 70%, 0.95)', 'hsla(30, 60%, 70%, 0.95)'
+    ];
+
+    function getRandom(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    // 流星雨生成逻辑强化（更密集、更明显）
+    function createMeteor() {
+      const meteor = document.createElement('div');
+      meteor.className = 'meteor';
+
+      // 扩大起始位置范围，屏幕上半部分都可能出现流星
+      const startX = getRandom(window.innerWidth * 0.4, window.innerWidth);
+      const startY = getRandom(0, window.innerHeight * 0.4);
+      meteor.style.left = `${startX}px`;
+      meteor.style.top = `${startY}px`;
+
+      // 随机长度加长（40-60px），视觉更突出
+      meteor.style.height = `${getRandom(40, 60)}px`;
+
+      // 动画时长缩短（0.8-1.5秒），流星划过速度更快，更有冲击力
+      meteor.style.animationDuration = `${getRandom(0.8, 1.5)}s`;
+
+      // 延迟更短（0-0.8秒），流星出现更密集
+      meteor.style.animationDelay = `${getRandom(0, 0.8)}s`;
+
+      document.getElementById('meteorContainer').appendChild(meteor);
+
+      // 动画结束后移除
+      const removeTime = (parseFloat(meteor.style.animationDuration) + parseFloat(meteor.style.animationDelay)) * 1000;
+      setTimeout(() => {
+        if (meteor.parentNode) meteor.remove();
+      }, removeTime);
+    }
+
+    // 启动流星雨（密度翻倍）
+    function startMeteors() {
+      // 初始生成8颗，快速形成流星雨氛围
+      for (let i = 0; i < 8; i++) {
+        createMeteor();
+      }
+      // 生成间隔缩短（200-400ms），流星更密集
+      setInterval(createMeteor, getRandom(200, 400));
+    }
+
+    // 弹窗生成
+    function createBatchPopups() {
+      const batchSize = Math.floor(getRandom(8, 12));
+      for (let i = 0; i < batchSize; i++) {
+        const div = document.createElement('div');
+        div.className = 'popup';
+        const msgIndex = Math.floor(getRandom(0, messages.length));
+        div.innerText = messages[msgIndex];
+        const colorIndex = Math.floor(getRandom(0, warmColors.length));
+        div.style.backgroundColor = warmColors[colorIndex];
+        const maxX = window.innerWidth - 300;
+        const maxY = window.innerHeight - 120;
+        div.style.left = `${Math.max(20, getRandom(10, maxX))}px`;
+        div.style.top = `${Math.max(20, getRandom(10, maxY))}px`;
+        const rotateInit = getRandom(-5, 5);
+        const rotateFinal = getRandom(-3, 3);
+        div.style.setProperty('--rotate-init', `${rotateInit}deg`);
+        div.style.setProperty('--rotate-final', `${rotateFinal}deg`);
+        div.style.setProperty('--float-range', getRandom(8, 12));
+        div.style.animationDuration = `${getRandom(3, 4)}s`;
+        div.style.animationDelay = `${getRandom(0, 0.8)}s`;
+        document.body.appendChild(div);
+        const removeTime = (parseFloat(div.style.animationDuration) + parseFloat(div.style.animationDelay)) * 1000;
+        setTimeout(() => {
+          if (div.parentNode) div.remove();
+        }, removeTime);
+      }
+    }
+
+    // 音乐逻辑
+    const bgMusic = document.getElementById('bgMusic');
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const musicStatus = document.getElementById('musicStatus');
+    let isMusicPlaying = false;
+
+    function playMusic() {
+      musicStatus.textContent = '音乐加载中...';
+      musicStatus.classList.add('show');
+      bgMusic.load();
+      bgMusic.play().then(() => {
+        isMusicPlaying = true;
+        playBtn.disabled = true;
+        pauseBtn.disabled = false;
+        musicStatus.classList.remove('show');
+      }).catch((err) => {
+        alert(`音乐加载失败！\n原因：${err.message}\n建议：1. 更换Chrome浏览器 2. 检查网络 3. 刷新页面重试`);
+        musicStatus.textContent = '加载失败，点击播放重试';
+      });
+    }
+
+    function pauseMusic() {
+      bgMusic.pause();
+      isMusicPlaying = false;
+      playBtn.disabled = false;
+      pauseBtn.disabled = true;
+      musicStatus.textContent = '音乐已暂停';
+      musicStatus.classList.add('show');
+    }
+
+    // 页面初始化
+    window.onload = () => {
+      startMeteors(); // 优先启动高亮流星雨
+      createBatchPopups();
+      createBatchPopups();
+      setInterval(createBatchPopups, getRandom(1500, 2000));
+      bgMusic.play().catch(() => {
+        musicStatus.textContent = '自动播放被拦截，点击播放按钮启动';
+        musicStatus.classList.add('show');
+      });
+    };
+  </script>
+</body>
+</html>
